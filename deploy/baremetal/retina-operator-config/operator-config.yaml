@@ -1,0 +1,7 @@
+installCRDs: true
+# `enableRetinaEndpoint` will be forced to true in the code
+enableRetinaEndpoint: true
+enableTelemetry: false
+remoteContext: false
+captureDebug: true
+captureJobNumLimit: 0

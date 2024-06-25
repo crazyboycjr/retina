@@ -442,6 +442,25 @@ helm-install-advanced-local-context: manifests
 		--set enablePodLevel=true \
 		--set enableAnnotations=true
 
+helm-render-advanced-local-context: manifests
+	@$(MKDIR) -p ./yamls
+	helm template retina ./deploy/manifests/controller/helm/retina/ --output-dir ./yamls \
+		--namespace kube-system \
+		--set image.repository=$(IMAGE_REGISTRY)/$(RETINA_IMAGE) \
+		--set image.initRepository=$(IMAGE_REGISTRY)/$(RETINA_INIT_IMAGE) \
+		--set image.tag=$(HELM_IMAGE_TAG) \
+		--set operator.tag=$(HELM_IMAGE_TAG) \
+		--set image.pullPolicy=Always \
+		--set logLevel=info \
+		--set os.windows=true \
+		--set operator.enabled=true \
+		--set operator.enableRetinaEndpoint=true \
+		--set operator.repository=$(IMAGE_REGISTRY)/$(RETINA_OPERATOR_IMAGE) \
+		--skip-crds \
+		--set enabledPlugin_linux="\[dropreason\,packetforward\,linuxutil\,dns\,packetparser\]" \
+		--set enablePodLevel=true \
+		--set enableAnnotations=true
+
 helm-uninstall:
 	helm uninstall retina -n kube-system
 
@@ -458,6 +477,11 @@ docs-prod:
 quick-build:
 	$(MAKE) retina-image PLATFORM=linux/amd64 BUILDX_ACTION=--push
 	$(MAKE) retina-operator-image PLATFORM=linux/amd64 BUILDX_ACTION=--push
+
+.PHONY: quick-build-push-to-local
+quick-build-push-to-local:
+	$(MAKE) retina-image PLATFORM=linux/amd64 BUILDX_ACTION=--load
+	$(MAKE) retina-operator-image PLATFORM=linux/amd64 BUILDX_ACTION=--load
 
 .PHONY: quick-deploy
 quick-deploy:

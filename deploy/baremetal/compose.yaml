@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+
+  init-retina:
+    image: "ghcr.io/crazyboycjr/retina/retina-init:v0.0.2"
+    volumes:
+      - /sys/fs/bpf:/sys/fs/bpf:rw,rshared
+    security_opt:
+      - seccomp:unconfined
+    network_mode: host
+    privileged: true
+
+  retina:
+    image: ghcr.io/crazyboycjr/retina/retina-agent:v0.0.2
+    depends_on:
+      init-retina:
+        condition: service_completed_successfully
+    deploy:
+      # works only for swarm cluster, meaning that it is a daemonset
+      mode: global
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 300M
+        reservations:
+          cpus: '0.5'
+          memory: 300M
+    environment:
+      - POD_NAME=${POD_NAME}
+      - NODE_NAME=${NODE_NAME}
+      - NODE_IP=${NODE_IP}
+    command: 
+      - /retina/controller
+      - --health-probe-bind-address=:18081
+      - --metrics-bind-address=:18080
+      - --config
+      - /retina/config/config.yaml
+    ports:
+      - "10093:10093"
+    volumes:
+      - /sys/fs/bpf:/sys/fs/bpf
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /sys/kernel/debug:/sys/kernel/debug
+      - /sys/kernel/tracing:/sys/kernel/tracing
+      - ./retina-config:/retina/config
+      - tmp-volume:/tmp  # Using a named volume as a temporary space
+    cap_add:
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - NET_ADMIN
+      - IPC_LOCK
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10093/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  retina-operator:
+    image: ghcr.io/crazyboycjr/retina/retina-operator:v0.0.2
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.01'
+          memory: 128M
+    environment:
+      - KUBERNETES_SERVICE_HOST
+      - KUBERNETES_SERVICE_PORT
+    command:
+      - /retina-operator
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./retina-operator-config:/retina/  # Assuming configMap content is stored locally in retina-operator-config directory
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/healthz"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+    restart: always
+    stop_grace_period: 10s
+
+volumes:
+  tmp-volume:  # Define a named volume
