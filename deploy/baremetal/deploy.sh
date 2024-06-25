@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+WORKDIR=`dirname $(realpath $0)`
+cd $WORKDIR
+
 function get_makefile_variable() {
   make --eval='print-%:; @echo "$($*)"' print-$1
 }
@@ -25,5 +28,9 @@ save_docker_image "$IMAGE_REGISTRY/$RETINA_INIT_IMAGE:$TAG" retina-init.tar
 save_docker_image "$IMAGE_REGISTRY/$RETINA_IMAGE:$TAG" retina-agent.tar
 save_docker_image "$IMAGE_REGISTRY/$RETINA_OPERATOR_IMAGE:$TAG" retina-operator.tar
 
-# sudo docker compose up -d retina
-# sudo docker compose up -d retina-agent
+
+# ssh w1 pv retina-operator-765fcef2bfc4.tar | sudo docker load
+# pv ../../retina-operator-765fcef2bfc4.tar | docker load
+
+sudo docker compose up -d retina
+sudo docker compose up -d retina-operator

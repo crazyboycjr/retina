@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
 
   init-retina:
-    image: "ghcr.io/crazyboycjr/retina/retina-init:v0.0.2"
+    image: ghcr.io/crazyboycjr/retina/retina-init:v0.0.12-31-g06814d5-linux-amd64
     volumes:
       - /sys/fs/bpf:/sys/fs/bpf:rw,rshared
     security_opt:
@@ -12,7 +10,7 @@ services:
     privileged: true
 
   retina:
-    image: ghcr.io/crazyboycjr/retina/retina-agent:v0.0.2
+    image: ghcr.io/crazyboycjr/retina/retina-agent:v0.0.12-31-g06814d5-linux-amd64
     depends_on:
       init-retina:
         condition: service_completed_successfully
@@ -57,7 +55,7 @@ services:
       retries: 3
 
   retina-operator:
-    image: ghcr.io/crazyboycjr/retina/retina-operator:v0.0.2
+    image: ghcr.io/crazyboycjr/retina/retina-operator:v0.0.12-31-g06814d5-linux-amd64
     deploy:
       replicas: 1
       resources:
